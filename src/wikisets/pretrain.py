@@ -2,9 +2,8 @@
 
 import re
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
-import numpy as np
 from datasets import Dataset
 
 
@@ -19,16 +18,14 @@ def load_tokenizer(tokenizer: Union[str, Any]) -> Any:
     """
     if isinstance(tokenizer, str):
         from transformers import AutoTokenizer
+
         print(f"Loading tokenizer: {tokenizer}")
         return AutoTokenizer.from_pretrained(tokenizer)
     return tokenizer
 
 
 def find_split_point(
-    text: str,
-    max_tokens: int,
-    tokenizer: Any,
-    delimiter: str = "newline"
+    text: str, max_tokens: int, tokenizer: Any, delimiter: str = "newline"
 ) -> tuple[int, bool]:
     """Find character position to split text based on token limit and delimiter.
 
@@ -87,18 +84,18 @@ def find_split_point(
         warnings.warn(
             f"No delimiter found in last 20% of text (length {best_pos}). "
             f"Cutting at token boundary.",
-            stacklevel=2
+            stacklevel=2,
         )
         return best_pos, False
 
 
 def chunk_article(
-    article: Dict[str, Any],
+    article: dict[str, Any],
     max_tokens: int,
     tokenizer: Any,
     delimiter: str = "newline",
-    tracker: Optional[Any] = None
-) -> List[Dict[str, Any]]:
+    tracker: Optional[Any] = None,
+) -> list[dict[str, Any]]:
     """Chunk a single article into multiple parts.
 
     Args:
@@ -133,15 +130,17 @@ def chunk_article(
 
         # Create chunk
         chunk_text = remaining[:split_pos]
-        chunks.append({
-            "id": article["id"],
-            "url": article["url"],
-            "title": article["title"],
-            "text": chunk_text,
-            "lang": article["lang"],
-            "chunk_index": chunk_idx,
-            "total_chunks": -1,  # Will update after
-        })
+        chunks.append(
+            {
+                "id": article["id"],
+                "url": article["url"],
+                "title": article["title"],
+                "text": chunk_text,
+                "lang": article["lang"],
+                "chunk_index": chunk_idx,
+                "total_chunks": -1,  # Will update after
+            }
+        )
 
         offset += split_pos
         chunk_idx += 1
@@ -160,7 +159,7 @@ def apply_pretrain_chunking(
     nearest_delimiter: str = "newline",
     num_proc: Optional[int] = None,
     batch_size: int = 1000,
-    tracker: Optional[Any] = None
+    tracker: Optional[Any] = None,
 ) -> Dataset:
     """Apply pretraining chunking to dataset.
 
@@ -187,7 +186,7 @@ def apply_pretrain_chunking(
                 },
                 num_proc=num_proc,
                 batch_size=batch_size,
-                desc="Adding metadata"
+                desc="Adding metadata",
             )
         return dataset
 
@@ -195,8 +194,8 @@ def apply_pretrain_chunking(
     tok = load_tokenizer(tokenizer)
 
     # Process articles into chunks
-    def process_batch(batch: Dict[str, List[Any]]) -> Dict[str, List[Any]]:
-        all_chunks: Dict[str, List[Any]] = {
+    def process_batch(batch: dict[str, list[Any]]) -> dict[str, list[Any]]:
+        all_chunks: dict[str, list[Any]] = {
             "id": [],
             "url": [],
             "title": [],
@@ -215,7 +214,9 @@ def apply_pretrain_chunking(
                 "lang": batch["lang"][i],
             }
 
-            chunks = chunk_article(article, split_token_len, tok, nearest_delimiter, tracker)
+            chunks = chunk_article(
+                article, split_token_len, tok, nearest_delimiter, tracker
+            )
 
             for chunk in chunks:
                 for key in all_chunks:
@@ -231,7 +232,7 @@ def apply_pretrain_chunking(
         batch_size=batch_size,
         num_proc=num_proc,
         remove_columns=dataset.column_names,
-        desc="Chunking articles"
+        desc="Chunking articles",
     )
 
     return chunked

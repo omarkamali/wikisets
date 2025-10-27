@@ -1,6 +1,7 @@
 """Tests for WikisetConfig."""
 
 import pytest
+
 from wikisets.config import WikisetConfig
 
 

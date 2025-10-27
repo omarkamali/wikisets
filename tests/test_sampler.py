@@ -1,6 +1,5 @@
 """Tests for sampling utilities."""
 
-import pytest
 from wikisets.sampler import compute_interleave_probabilities
 
 

@@ -2,15 +2,16 @@
 These tests monkeypatch `datasets.load_dataset` to capture which split is
 requested by `Wikiset._load_language()`.
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple
-
 import types
+from typing import Any
+
 import pytest
 
-from wikisets.wikiset import Wikiset
 from wikisets.utils import select_split_for_size
+from wikisets.wikiset import Wikiset
 
 
 class _FakeHFData:
@@ -41,7 +42,7 @@ class _FakeHFData:
 
 @pytest.fixture()
 def capture_load(monkeypatch):
-    calls: list[Dict[str, Any]] = []
+    calls: list[dict[str, Any]] = []
 
     def fake_load_dataset(path: str, subset: str, split: str):
         calls.append({"path": path, "subset": subset, "split": split})
@@ -57,7 +58,7 @@ def capture_load(monkeypatch):
     return calls
 
 
-def _call_load_language(**kwargs) -> Tuple[int, Dict[str, Any]]:
+def _call_load_language(**kwargs) -> tuple[int, dict[str, Any]]:
     # Access the private method for a focused test
     ds, stat = Wikiset._load_language(**kwargs)
     return len(ds), stat

@@ -1,9 +1,7 @@
 """Tests for pretraining chunking utilities."""
 
 from dataclasses import dataclass
-from typing import List
 
-import pytest
 from datasets import Dataset
 
 from wikisets.pretrain import apply_pretrain_chunking, chunk_article, find_split_point
@@ -14,7 +12,7 @@ from wikisets.utils import WarningTracker
 class FakeTokenizer:
     """Simple whitespace tokenizer for testing."""
 
-    def encode(self, text: str, add_special_tokens: bool = False) -> List[str]:
+    def encode(self, text: str, add_special_tokens: bool = False) -> list[str]:
         # Token per word; empty text -> empty list
         if not text:
             return []
@@ -38,7 +36,9 @@ def test_find_split_point_uses_delimiter_and_warns_when_missing(recwarn):
 
     # No delimiter region case: use newline delimiter but none near end
     text2 = "line1\nline2\nline3longwordwithoutnewline"
-    pos2, found2 = find_split_point(text2, max_tokens=3, tokenizer=tok, delimiter="newline")
+    pos2, found2 = find_split_point(
+        text2, max_tokens=3, tokenizer=tok, delimiter="newline"
+    )
     # With our tokenizer, tokens are split by spaces; newlines preserved in chars only
     # It's acceptable if it doesn't find delimiter and returns token boundary
     assert found2 in (True, False)
@@ -54,7 +54,9 @@ def test_chunk_article_multiple_chunks_and_tracker():
         "text": " ".join([f"w{i}" for i in range(10)]),
         "lang": "en",
     }
-    chunks = chunk_article(article, max_tokens=4, tokenizer=tok, delimiter="space", tracker=tracker)
+    chunks = chunk_article(
+        article, max_tokens=4, tokenizer=tok, delimiter="space", tracker=tracker
+    )
     # Expect ceil(10/4)=3 chunks
     assert len(chunks) == 3
     # Metadata present and total_chunks set
@@ -62,13 +64,15 @@ def test_chunk_article_multiple_chunks_and_tracker():
 
 
 def test_apply_pretrain_chunking_no_split_adds_metadata():
-    ds = Dataset.from_dict({
-        "id": ["1", "2"],
-        "url": ["u1", "u2"],
-        "title": ["t1", "t2"],
-        "text": ["a b c", "d e"],
-        "lang": ["en", "en"],
-    })
+    ds = Dataset.from_dict(
+        {
+            "id": ["1", "2"],
+            "url": ["u1", "u2"],
+            "title": ["t1", "t2"],
+            "text": ["a b c", "d e"],
+            "lang": ["en", "en"],
+        }
+    )
 
     out = apply_pretrain_chunking(ds, split_token_len=None, tokenizer=None)
     assert set(["chunk_index", "total_chunks"]).issubset(out.column_names)
@@ -76,13 +80,15 @@ def test_apply_pretrain_chunking_no_split_adds_metadata():
 
 
 def test_apply_pretrain_chunking_with_split():
-    ds = Dataset.from_dict({
-        "id": ["1"],
-        "url": ["u1"],
-        "title": ["t1"],
-        "text": [" ".join([f"w{i}" for i in range(9)])],
-        "lang": ["en"],
-    })
+    ds = Dataset.from_dict(
+        {
+            "id": ["1"],
+            "url": ["u1"],
+            "title": ["t1"],
+            "text": [" ".join([f"w{i}" for i in range(9)])],
+            "lang": ["en"],
+        }
+    )
 
     tok = FakeTokenizer()
     out = apply_pretrain_chunking(
@@ -95,4 +101,6 @@ def test_apply_pretrain_chunking_with_split():
     )
     # Expect 3 chunks
     assert len(out) == 3
-    assert set(["id", "url", "title", "text", "lang", "chunk_index", "total_chunks"]).issubset(out.column_names)
+    assert set(
+        ["id", "url", "title", "text", "lang", "chunk_index", "total_chunks"]
+    ).issubset(out.column_names)

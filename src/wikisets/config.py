@@ -1,7 +1,7 @@
 """Configuration classes for Wikiset dataset construction."""
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 
 @dataclass
@@ -17,7 +17,7 @@ class WikisetConfig:
         num_proc: Number of processes for parallel operations (default: None).
     """
 
-    languages: List[Dict[str, Union[str, int, float]]]
+    languages: list[dict[str, Union[str, int, float]]]
     date: str = "latest"
     use_train_split: bool = False
     shuffle: bool = False
@@ -71,7 +71,7 @@ class WikisetConfig:
             raise ValueError("seed must be non-negative")
 
     @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "WikisetConfig":
+    def from_dict(cls, config_dict: dict[str, Any]) -> "WikisetConfig":
         """Create WikisetConfig from dictionary.
 
         Args:

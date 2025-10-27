@@ -16,15 +16,31 @@ def test_generate_dataset_card_basic_sections():
         use_train_split=False,
     )
     language_stats = [
-        {"language": "en", "requested_size": "1000 items", "split_used": "1000", "actual_size": 1000},
-        {"language": "ary", "requested_size": "10.0% (~200 items)", "split_used": "train (sampled)", "actual_size": 200},
+        {
+            "language": "en",
+            "requested_size": "1000 items",
+            "split_used": "1000",
+            "actual_size": 1000,
+        },
+        {
+            "language": "ary",
+            "requested_size": "10.0% (~200 items)",
+            "split_used": "train (sampled)",
+            "actual_size": 200,
+        },
     ]
     warnings = ["Split '10000' not found for ary, falling back to train"]
-    card = generate_dataset_card(config, language_stats, warnings, total_size=1200, pretrain_config={
-        "split_token_len": 2048,
-        "tokenizer": "test-tokenizer",
-        "nearest_delimiter": "newline",
-    })
+    card = generate_dataset_card(
+        config,
+        language_stats,
+        warnings,
+        total_size=1200,
+        pretrain_config={
+            "split_token_len": 2048,
+            "tokenizer": "test-tokenizer",
+            "nearest_delimiter": "newline",
+        },
+    )
 
     # Header and Configuration
     assert "# Wikiset Dataset Card" in card
@@ -33,7 +49,9 @@ def test_generate_dataset_card_basic_sections():
     assert "Languages:" in card
 
     # Language Composition table rows
-    assert "| Language | Requested Size | Split Used | Actual Size | Percentage |" in card
+    assert (
+        "| Language | Requested Size | Split Used | Actual Size | Percentage |" in card
+    )
     assert "| en | 1000 items | 1000 | 1,000 |" in card
     assert "| ary | 10.0% (~200 items) | train (sampled) | 200 |" in card
 

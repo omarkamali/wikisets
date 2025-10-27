@@ -1,6 +1,5 @@
 """Tests for utils: WarningTracker, parse_size, select_split_for_size."""
 
-import warnings
 import pytest
 
 from wikisets.utils import WarningTracker, parse_size, select_split_for_size

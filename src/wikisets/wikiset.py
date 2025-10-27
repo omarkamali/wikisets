@@ -1,6 +1,6 @@
 """Main Wikiset dataset class."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from datasets import Dataset, concatenate_datasets, interleave_datasets, load_dataset
 from tqdm.auto import tqdm
@@ -21,12 +21,12 @@ class Wikiset(Dataset):
 
     _config: Optional[WikisetConfig] = None
     _warnings: Optional[WarningTracker] = None
-    _language_stats: Optional[List[Dict[str, Any]]] = None
+    _language_stats: Optional[list[dict[str, Any]]] = None
 
     @classmethod
     def create(
         cls,
-        config: Union[Dict[str, Any], WikisetConfig],
+        config: Union[dict[str, Any], WikisetConfig],
         num_proc: Optional[int] = None,
     ) -> "Wikiset":
         """Create a Wikiset from configuration.
@@ -56,12 +56,7 @@ class Wikiset(Dataset):
         language_stats = []
 
         # Progress bar for language loading
-        pbar = tqdm(
-            cfg.languages,
-            desc="Loading languages",
-            unit="lang",
-            leave=True
-        )
+        pbar = tqdm(cfg.languages, desc="Loading languages", unit="lang", leave=True)
 
         for entry in pbar:
             lang = entry["lang"]
@@ -80,17 +75,11 @@ class Wikiset(Dataset):
                 )
                 language_datasets.append(ds)
                 language_stats.append(stat)
-                pbar.set_postfix({
-                    "current": lang,
-                    "loaded": len(ds)
-                })
+                pbar.set_postfix({"current": lang, "loaded": len(ds)})
 
             except Exception as e:
                 tracker.warn(f"Failed to load language '{lang}': {e}")
-                pbar.set_postfix({
-                    "current": lang,
-                    "status": "failed"
-                })
+                pbar.set_postfix({"current": lang, "status": "failed"})
                 continue
 
         pbar.close()
@@ -109,7 +98,7 @@ class Wikiset(Dataset):
                 language_datasets,
                 probabilities=probabilities,
                 seed=cfg.seed,
-                stopping_strategy="first_exhausted"
+                stopping_strategy="first_exhausted",
             )
             # Convert to Dataset
             print("Materializing interleaved dataset...")
@@ -152,7 +141,7 @@ class Wikiset(Dataset):
         use_train_split: bool,
         seed: int,
         tracker: WarningTracker,
-    ) -> tuple[Dataset, Dict[str, Any]]:
+    ) -> tuple[Dataset, dict[str, Any]]:
         """Load a single language dataset.
 
         Args:
@@ -175,11 +164,7 @@ class Wikiset(Dataset):
         if is_percentage:
             # Load train split for percentage sampling
             try:
-                ds = load_dataset(
-                    "omarkamali/wikipedia-monthly",
-                    subset,
-                    split="train"
-                )
+                ds = load_dataset("omarkamali/wikipedia-monthly", subset, split="train")
             except Exception as e:
                 raise ValueError(f"Failed to load train split for {lang}: {e}")
 
@@ -216,20 +201,14 @@ class Wikiset(Dataset):
             # Try to load the selected split
             try:
                 ds = load_dataset(
-                    "omarkamali/wikipedia-monthly",
-                    subset,
-                    split=split_name
+                    "omarkamali/wikipedia-monthly", subset, split=split_name
                 )
             except Exception:
                 # Fallback to train
                 tracker.warn(
                     f"Split '{split_name}' not found for {lang}, falling back to train"
                 )
-                ds = load_dataset(
-                    "omarkamali/wikipedia-monthly",
-                    subset,
-                    split="train"
-                )
+                ds = load_dataset("omarkamali/wikipedia-monthly", subset, split="train")
                 split_name = "train"
 
             actual_size = len(ds)
@@ -348,7 +327,7 @@ class Wikiset(Dataset):
         """
         return self._info.description or "No card available"
 
-    def get_warnings(self) -> List[str]:
+    def get_warnings(self) -> list[str]:
         """Get all warnings from dataset construction.
 
         Returns:

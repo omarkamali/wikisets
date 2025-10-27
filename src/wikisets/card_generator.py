@@ -1,15 +1,15 @@
 """Dataset card generation utilities."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 def generate_dataset_card(
     config: Any,
-    language_stats: List[Dict[str, Any]],
-    warnings: List[str],
+    language_stats: list[dict[str, Any]],
+    warnings: list[str],
     total_size: int,
-    pretrain_config: Optional[Dict[str, Any]] = None
+    pretrain_config: Optional[dict[str, Any]] = None,
 ) -> str:
     """Generate markdown dataset card.
 
@@ -45,7 +45,9 @@ def generate_dataset_card(
     # Language breakdown
     lines.append("## Language Composition")
     lines.append("")
-    lines.append("| Language | Requested Size | Split Used | Actual Size | Percentage |")
+    lines.append(
+        "| Language | Requested Size | Split Used | Actual Size | Percentage |"
+    )
     lines.append("|----------|---------------|------------|-------------|------------|")
 
     for stat in language_stats:
@@ -64,7 +66,9 @@ def generate_dataset_card(
     lines.append("### Split Selection Rules")
     lines.append("")
     lines.append("- **Exact matches (1k, 5k, 10k):** Use corresponding sample split")
-    lines.append("- **Sizes ≤10k:** Use smallest sample split that fits (ceil strategy)")
+    lines.append(
+        "- **Sizes ≤10k:** Use smallest sample split that fits (ceil strategy)"
+    )
     lines.append("- **Sizes >10k or percentages:** Reservoir sampling from train split")
     lines.append("- **100% or 1.0:** Full train split without sampling")
     lines.append("- **Missing sample splits:** Automatic fallback to train split")
@@ -73,7 +77,9 @@ def generate_dataset_card(
     if config.shuffle:
         lines.append("### Language Mixing")
         lines.append("")
-        lines.append("Languages are proportionally interleaved based on their selected sizes ")
+        lines.append(
+            "Languages are proportionally interleaved based on their selected sizes "
+        )
         lines.append("to provide fair representation in batches.")
         lines.append("")
 
@@ -81,18 +87,30 @@ def generate_dataset_card(
     if pretrain_config:
         lines.append("## Pretraining Configuration")
         lines.append("")
-        lines.append(f"- **Split Token Length:** {pretrain_config.get('split_token_len', 'None')}")
+        lines.append(
+            f"- **Split Token Length:** {pretrain_config.get('split_token_len', 'None')}"
+        )
         lines.append(f"- **Tokenizer:** {pretrain_config.get('tokenizer', 'N/A')}")
-        lines.append(f"- **Delimiter:** {pretrain_config.get('nearest_delimiter', 'newline')}")
+        lines.append(
+            f"- **Delimiter:** {pretrain_config.get('nearest_delimiter', 'newline')}"
+        )
         lines.append("")
         lines.append("### Chunking Logic")
         lines.append("")
-        lines.append("Articles are split into chunks with token counts up to the specified limit. ")
-        lines.append("Text is cut at the nearest delimiter (newline by default) before the token ")
-        lines.append("boundary. If no delimiter is found in the last 20% of the target length, ")
+        lines.append(
+            "Articles are split into chunks with token counts up to the specified limit. "
+        )
+        lines.append(
+            "Text is cut at the nearest delimiter (newline by default) before the token "
+        )
+        lines.append(
+            "boundary. If no delimiter is found in the last 20% of the target length, "
+        )
         lines.append("the text is cut at the token boundary with a warning.")
         lines.append("")
-        lines.append("Each chunk preserves the original article metadata (id, url, title, lang) ")
+        lines.append(
+            "Each chunk preserves the original article metadata (id, url, title, lang) "
+        )
         lines.append("and adds chunk_index and total_chunks fields.")
         lines.append("")
 

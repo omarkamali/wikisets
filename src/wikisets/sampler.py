@@ -1,15 +1,13 @@
 """Sampling utilities for dataset construction."""
 
+from typing import Optional
+
 import numpy as np
 from datasets import Dataset
-from typing import Optional
 
 
 def reservoir_sample(
-    dataset: Dataset,
-    k: int,
-    seed: int = 42,
-    total_size: Optional[int] = None
+    dataset: Dataset, k: int, seed: int = 42, total_size: Optional[int] = None
 ) -> Dataset:
     """Perform reservoir sampling to select k items from dataset.
 

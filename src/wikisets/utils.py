@@ -1,7 +1,7 @@
 """Utility functions for Wikiset."""
 
 import warnings
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -10,7 +10,7 @@ class WarningTracker:
     """Track warnings for inclusion in dataset cards."""
 
     def __init__(self) -> None:
-        self.warnings: List[str] = []
+        self.warnings: list[str] = []
 
     def warn(self, message: str, category: type = UserWarning) -> None:
         """Issue a warning and track it.
@@ -22,7 +22,7 @@ class WarningTracker:
         self.warnings.append(message)
         warnings.warn(message, category, stacklevel=2)
 
-    def get_warnings(self) -> List[str]:
+    def get_warnings(self) -> list[str]:
         """Get all tracked warnings.
 
         Returns:
@@ -58,7 +58,7 @@ def parse_size(size: str | int | float, total: Optional[int] = None) -> tuple[in
         if total is None:
             raise ValueError("total required for fractional size")
         target = max(1, int(np.ceil(size * total)))
-        return target, f"{size*100:.1f}% (~{target} items)"
+        return target, f"{size * 100:.1f}% (~{target} items)"
 
     else:
         # Absolute integer
