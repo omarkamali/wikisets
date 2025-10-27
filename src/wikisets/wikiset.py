@@ -2,13 +2,23 @@
 
 from typing import Any, Optional, Union
 
-from datasets import Dataset, concatenate_datasets, interleave_datasets, load_dataset
+from datasets import (
+    Dataset,
+    concatenate_datasets,
+    interleave_datasets,
+    load_dataset,
+    load_dataset_builder,
+)
 from tqdm.auto import tqdm
 
 from .card_generator import generate_dataset_card
 from .config import WikisetConfig
 from .pretrain import apply_pretrain_chunking
-from .sampler import compute_interleave_probabilities, reservoir_sample
+from .sampler import (
+    compute_interleave_probabilities,
+    reservoir_sample,
+    reservoir_sample_streaming,
+)
 from .utils import WarningTracker, parse_size, select_split_for_size
 
 
@@ -161,19 +171,59 @@ class Wikiset(Dataset):
         # Determine if percentage/fraction
         is_percentage = isinstance(size, (float, str))
 
-        if is_percentage:
-            # Load train split for percentage sampling
+        # Helper: try to load a split with streaming, but fall back to non-streaming
+        def _load_split_with_streaming(path: str, name: str, split: str):
             try:
-                ds = load_dataset("omarkamali/wikipedia-monthly", subset, split="train")
-            except Exception as e:
-                raise ValueError(f"Failed to load train split for {lang}: {e}")
+                ds_any = load_dataset(path, name, split=split, streaming=True)  # type: ignore[arg-type]
+                # Some test doubles won't be iterable; detect and treat as non-streaming
+                if hasattr(ds_any, "__iter__"):
+                    return ds_any, True
+                return ds_any, False
+            except TypeError:
+                # load_dataset may not accept streaming kwarg (tests monkeypatch with a narrower signature)
+                ds_any = load_dataset(path, name, split=split)  # type: ignore[arg-type]
+                return ds_any, False
 
-            total_size = len(ds)
+        # Helper: get split size via builder, else via len(dataset)
+        def _get_split_size(path: str, name: str, split: str) -> Optional[int]:
+            try:
+                builder = load_dataset_builder(path, name)  # type: ignore[arg-type]
+                if builder.info.splits and split in builder.info.splits:
+                    info = builder.info.splits[split]
+                    if getattr(info, "num_examples", None) is not None:
+                        return int(info.num_examples)
+            except Exception:
+                pass
+            try:
+                ds_tmp = load_dataset(path, name, split=split)  # non-streaming fallback
+                return len(ds_tmp)  # type: ignore[arg-type]
+            except Exception:
+                return None
+
+        if is_percentage:
+            # Load train split for percentage sampling (streaming)
+            ds_any, is_streaming = _load_split_with_streaming(
+                "omarkamali/wikipedia-monthly", subset, "train"
+            )
+
+            total_size = _get_split_size(
+                "omarkamali/wikipedia-monthly", subset, "train"
+            )
+            if total_size is None:
+                raise ValueError(f"Failed to load train split for {lang}: unknown size")
+
             target_size, size_desc = parse_size(size, total_size)
 
             # Check if 100%
             if target_size >= total_size:
-                # Return full dataset
+                # Materialize full dataset via streaming
+                if is_streaming:
+                    items: list[dict[str, Any]] = []
+                    for ex in ds_any:  # type: ignore[assignment]
+                        items.append(ex)
+                    ds = Dataset.from_list(items)
+                else:
+                    ds = ds_any  # type: ignore[assignment]
                 ds = ds.add_column("lang", [lang] * len(ds))
                 return ds, {
                     "language": lang,
@@ -182,8 +232,11 @@ class Wikiset(Dataset):
                     "actual_size": len(ds),
                 }
 
-            # Reservoir sample
-            ds = reservoir_sample(ds, target_size, seed, total_size)
+            # Reservoir sample from stream and materialize
+            if is_streaming:
+                ds = reservoir_sample_streaming(ds_any, target_size, seed)  # type: ignore[arg-type]
+            else:
+                ds = reservoir_sample(ds_any, target_size, seed, total_size)  # type: ignore[arg-type]
             ds = ds.add_column("lang", [lang] * len(ds))
 
             return ds, {
@@ -198,26 +251,39 @@ class Wikiset(Dataset):
             target_size = int(size)
             split_name = select_split_for_size(target_size, use_train_split)
 
-            # Try to load the selected split
+            # Try to load the selected split (prefer streaming, fallback compatible with tests)
             try:
-                ds = load_dataset(
-                    "omarkamali/wikipedia-monthly", subset, split=split_name
+                ds_any, is_streaming = _load_split_with_streaming(
+                    "omarkamali/wikipedia-monthly", subset, split_name
                 )
             except Exception:
                 # Fallback to train
                 tracker.warn(
                     f"Split '{split_name}' not found for {lang}, falling back to train"
                 )
-                ds = load_dataset("omarkamali/wikipedia-monthly", subset, split="train")
+                ds_any, is_streaming = _load_split_with_streaming(
+                    "omarkamali/wikipedia-monthly", subset, "train"
+                )
                 split_name = "train"
 
-            actual_size = len(ds)
-
-            # If we got more than needed, sample down
-            if actual_size > target_size and split_name == "train":
-                ds = reservoir_sample(ds, target_size, seed, actual_size)
+            if split_name == "train":
+                # Sample down to target_size from stream
+                if is_streaming and hasattr(ds_any, "__iter__"):
+                    ds = reservoir_sample_streaming(ds_any, target_size, seed)  # type: ignore[arg-type]
+                else:
+                    # Non-streaming fallback for tests
+                    actual_size = len(ds_any)  # type: ignore[arg-type]
+                    ds = reservoir_sample(ds_any, target_size, seed, actual_size)  # type: ignore[arg-type]
                 split_used = "train (sampled)"
             else:
+                # For non-train sample splits, materialize full split
+                if is_streaming and hasattr(ds_any, "__iter__"):
+                    items: list[dict[str, Any]] = []
+                    for ex in ds_any:  # type: ignore[assignment]
+                        items.append(ex)
+                    ds = Dataset.from_list(items)
+                else:
+                    ds = ds_any  # type: ignore[assignment]
                 split_used = split_name
 
             # Add lang column
