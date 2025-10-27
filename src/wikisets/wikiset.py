@@ -178,8 +178,7 @@ class Wikiset(Dataset):
                 ds = load_dataset(
                     "omarkamali/wikipedia-monthly",
                     subset,
-                    split="train",
-                    trust_remote_code=True,
+                    split="train"
                 )
             except Exception as e:
                 raise ValueError(f"Failed to load train split for {lang}: {e}")
@@ -219,8 +218,7 @@ class Wikiset(Dataset):
                 ds = load_dataset(
                     "omarkamali/wikipedia-monthly",
                     subset,
-                    split=split_name,
-                    trust_remote_code=True,
+                    split=split_name
                 )
             except Exception:
                 # Fallback to train
@@ -230,8 +228,7 @@ class Wikiset(Dataset):
                 ds = load_dataset(
                     "omarkamali/wikipedia-monthly",
                     subset,
-                    split="train",
-                    trust_remote_code=True,
+                    split="train"
                 )
                 split_name = "train"
 
