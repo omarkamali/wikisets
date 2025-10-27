@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "wikisets"
-version = "0.1.0"
+version = "0.1.2"
 description = "Flexible Wikipedia dataset builder with sampling and pretraining support"
 readme = "README.md"
 requires-python = ">=3.9"
