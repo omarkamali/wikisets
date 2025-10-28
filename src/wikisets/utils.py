@@ -1,7 +1,7 @@
 """Utility functions for Wikiset."""
 
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 
@@ -35,7 +35,7 @@ class WarningTracker:
         self.warnings.clear()
 
 
-def parse_size(size: str | int | float, total: Optional[int] = None) -> tuple[int, str]:
+def parse_size(size: Union[str, int, float], total: Optional[int] = None) -> tuple[int, str]:
     """Parse size parameter to get target count and description.
 
     Args:

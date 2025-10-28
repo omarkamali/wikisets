@@ -172,7 +172,7 @@ class Wikiset(Dataset):
         is_percentage = isinstance(size, (float, str))
 
         # Helper: try to load a split with streaming, but fall back to non-streaming
-        def _load_split_with_streaming(path: str, name: str, split: str):
+        def _load_split_with_streaming(path: str, name: str, split: str) -> tuple[Any, bool]:
             try:
                 ds_any = load_dataset(path, name, split=split, streaming=True)  # type: ignore[arg-type]
                 # Some test doubles won't be iterable; detect and treat as non-streaming
@@ -218,10 +218,10 @@ class Wikiset(Dataset):
             if target_size >= total_size:
                 # Materialize full dataset via streaming
                 if is_streaming:
-                    items: list[dict[str, Any]] = []
+                    train_items: list[dict[str, Any]] = []
                     for ex in ds_any:  # type: ignore[assignment]
-                        items.append(ex)
-                    ds = Dataset.from_list(items)
+                        train_items.append(ex)
+                    ds = Dataset.from_list(train_items)
                 else:
                     ds = ds_any  # type: ignore[assignment]
                 ds = ds.add_column("lang", [lang] * len(ds))
@@ -278,10 +278,10 @@ class Wikiset(Dataset):
             else:
                 # For non-train sample splits, materialize full split
                 if is_streaming and hasattr(ds_any, "__iter__"):
-                    items: list[dict[str, Any]] = []
+                    split_items: list[dict[str, Any]] = []
                     for ex in ds_any:  # type: ignore[assignment]
-                        items.append(ex)
-                    ds = Dataset.from_list(items)
+                        split_items.append(ex)
+                    ds = Dataset.from_list(split_items)
                 else:
                     ds = ds_any  # type: ignore[assignment]
                 split_used = split_name
