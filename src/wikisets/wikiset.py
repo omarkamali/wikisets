@@ -316,12 +316,13 @@ class Wikiset(Dataset):
         Returns:
             New Wikiset with pretraining format.
         """
-        # Validate parameters
+        # Validate parameters and establish tokenizer to use
         if split_token_len is not None:
-            if tokenizer is None:
-                raise ValueError("tokenizer required when split_token_len is set")
             if split_token_len <= 0:
                 raise ValueError("split_token_len must be positive")
+        # Determine tokenizer name/value to use throughout (default to GPT-2)
+        tokenizer_to_use = tokenizer if tokenizer is not None else "gpt2"
+        tokenizer_name = str(tokenizer_to_use)
 
         # Use config num_proc if not specified
         if num_proc is None and self._config is not None:
@@ -336,7 +337,7 @@ class Wikiset(Dataset):
         chunked = apply_pretrain_chunking(
             dataset=self,
             split_token_len=split_token_len,
-            tokenizer=tokenizer,
+            tokenizer=tokenizer_to_use,
             nearest_delimiter=nearest_delimiter,
             num_proc=num_proc,
             batch_size=batch_size,
@@ -344,6 +345,29 @@ class Wikiset(Dataset):
         )
 
         print(f"✓ Created {len(chunked):,} chunks from {len(self):,} articles")
+        print(f"Tokenizer used: {tokenizer_name}")
+
+        # Compute token statistics
+        token_stats: dict[str, Any] | None = None
+        if "token_len" in chunked.column_names and "lang" in chunked.column_names:
+            token_lens = chunked["token_len"]  # type: ignore[index]
+            langs = chunked["lang"]  # type: ignore[index]
+            total_tokens = int(sum(int(t) for t in token_lens))
+            per_lang: dict[str, int] = {}
+            for l, t in zip(langs, token_lens):
+                per_lang[l] = per_lang.get(l, 0) + int(t)
+            per_language_rows = [
+                {"language": lang, "tokens": count} for lang, count in sorted(per_lang.items())
+            ]
+            token_stats = {
+                "total_tokens": total_tokens,
+                "per_language": per_language_rows,
+            }
+
+            # Print concise summary
+            print(f"Total tokens: {total_tokens:,}")
+            for row in per_language_rows:
+                print(f"  - {row['language']}: {row['tokens']:,} tokens")
 
         # Create new Wikiset
         wikiset = Wikiset(chunked._data)
@@ -370,7 +394,7 @@ class Wikiset(Dataset):
         if self._config is not None and self._language_stats is not None:
             pretrain_config = {
                 "split_token_len": split_token_len,
-                "tokenizer": str(tokenizer) if tokenizer else None,
+                "tokenizer": tokenizer_name,
                 "nearest_delimiter": nearest_delimiter,
             }
 
@@ -380,6 +404,7 @@ class Wikiset(Dataset):
                 warnings=all_warnings,
                 total_size=len(chunked),
                 pretrain_config=pretrain_config,
+                token_stats=token_stats,
             )
             wikiset._info.description = card
 

@@ -130,6 +130,8 @@ def chunk_article(
 
         # Create chunk
         chunk_text = remaining[:split_pos]
+        # Compute token length for this chunk
+        token_len = len(tokenizer.encode(chunk_text, add_special_tokens=False))
         chunks.append(
             {
                 "id": article["id"],
@@ -139,6 +141,7 @@ def chunk_article(
                 "lang": article["lang"],
                 "chunk_index": chunk_idx,
                 "total_chunks": -1,  # Will update after
+                "token_len": token_len,
             }
         )
 
@@ -203,6 +206,7 @@ def apply_pretrain_chunking(
             "lang": [],
             "chunk_index": [],
             "total_chunks": [],
+            "token_len": [],
         }
 
         for i in range(len(batch["id"])):

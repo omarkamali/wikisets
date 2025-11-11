@@ -10,6 +10,7 @@ def generate_dataset_card(
     warnings: list[str],
     total_size: int,
     pretrain_config: Optional[dict[str, Any]] = None,
+    token_stats: Optional[dict[str, Any]] = None,
 ) -> str:
     """Generate markdown dataset card.
 
@@ -94,6 +95,20 @@ def generate_dataset_card(
             "and adds chunk_index and total_chunks fields.\n\n"
         )
 
+    # Pretraining token statistics
+    token_stats_section = ""
+    if token_stats:
+        per_lang_rows = "\n".join(
+            f"| {row['language']} | {row['tokens']:,} |" for row in token_stats.get("per_language", [])
+        )
+        token_stats_section = (
+            "## Pretraining Token Statistics\n\n"
+            f"- **Total Tokens:** {token_stats.get('total_tokens', 0):,}\n\n"
+            "| Language | Tokens |\n"
+            "|----------|--------|\n"
+            f"{per_lang_rows}\n\n"
+        )
+
     # Warnings
     warnings_section = ""
     if warnings:
@@ -128,6 +143,7 @@ def generate_dataset_card(
         + sampling_section
         + language_mixing_section
         + pretrain_section
+        + token_stats_section
         + warnings_section
         + source_section
         + citation_section
