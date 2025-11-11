@@ -358,7 +358,7 @@ class Wikiset(Dataset):
         print(f"Tokenizer used: {tokenizer_name}")
 
         # Compute token statistics
-        token_stats: dict[str, Any] | None = None
+        token_stats: dict[str, Any] = {}
         if "token_len" in chunked.column_names and "lang" in chunked.column_names:
             token_lens = chunked["token_len"]  # type: ignore[index]
             langs = chunked["lang"]  # type: ignore[index]
