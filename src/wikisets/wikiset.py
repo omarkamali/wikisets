@@ -364,8 +364,8 @@ class Wikiset(Dataset):
             langs = chunked["lang"]  # type: ignore[index]
             total_tokens = int(sum(int(t) for t in token_lens))
             per_lang: dict[str, int] = {}
-            for l, t in zip(langs, token_lens):
-                per_lang[l] = per_lang.get(l, 0) + int(t)
+            for lang, token_len in zip(langs, token_lens):
+                per_lang[lang] = per_lang.get(lang, 0) + int(token_len)
             per_language_rows = [
                 {"language": lang, "tokens": count} for lang, count in sorted(per_lang.items())
             ]

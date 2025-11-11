@@ -1,4 +1,4 @@
-# [0.1.3] - 2025-11-11
+## [0.1.3] - 2025-11-11
 
 ### Added
 - Token count to dataset card generator
