@@ -122,3 +122,85 @@ def test_ceiling_small_sizes_use_smallest_sample(capture_load):
     )
     # Ensure we didn't fall back to train in the happy path
     assert capture_load[-1]["split"] in {"1000", "5000", "10000"}
+
+
+def test_downsamples_from_1000_split_to_requested_size(capture_load):
+    size, stat = _call_load_language(
+        lang="en",
+        size=800,
+        date="latest",
+        use_train_split=False,
+        seed=123,
+        tracker=types.SimpleNamespace(warn=lambda *a, **k: None),
+    )
+    assert capture_load[-1]["split"] == "1000"
+    assert size == 800
+    assert stat["split_used"] == "1000"
+
+
+def test_downsamples_from_5000_split_to_requested_size(capture_load):
+    size, stat = _call_load_language(
+        lang="en",
+        size=2500,
+        date="latest",
+        use_train_split=False,
+        seed=123,
+        tracker=types.SimpleNamespace(warn=lambda *a, **k: None),
+    )
+    assert capture_load[-1]["split"] == "5000"
+    assert size == 2500
+    assert stat["split_used"] == "5000"
+
+
+def test_downsamples_from_10000_split_to_requested_size(capture_load):
+    size, stat = _call_load_language(
+        lang="en",
+        size=7000,
+        date="latest",
+        use_train_split=False,
+        seed=123,
+        tracker=types.SimpleNamespace(warn=lambda *a, **k: None),
+    )
+    assert capture_load[-1]["split"] == "10000"
+    assert size == 7000
+    assert stat["split_used"] == "10000"
+
+
+def test_exact_1000_and_5000_return_exact_sizes(capture_load):
+    size1, stat1 = _call_load_language(
+        lang="en",
+        size=1000,
+        date="latest",
+        use_train_split=False,
+        seed=123,
+        tracker=types.SimpleNamespace(warn=lambda *a, **k: None),
+    )
+    assert capture_load[-1]["split"] == "1000"
+    assert size1 == 1000
+    assert stat1["split_used"] == "1000"
+
+    size2, stat2 = _call_load_language(
+        lang="en",
+        size=5000,
+        date="latest",
+        use_train_split=False,
+        seed=123,
+        tracker=types.SimpleNamespace(warn=lambda *a, **k: None),
+    )
+    assert capture_load[-1]["split"] == "5000"
+    assert size2 == 5000
+    assert stat2["split_used"] == "5000"
+
+
+def test_greater_than_10k_uses_train_and_returns_requested(capture_load):
+    size, stat = _call_load_language(
+        lang="simple",
+        size=15000,
+        date="latest",
+        use_train_split=False,
+        seed=123,
+        tracker=types.SimpleNamespace(warn=lambda *a, **k: None),
+    )
+    assert capture_load[-1]["split"] == "train"
+    assert size == 15000
+    assert stat["split_used"] == "train (sampled)"

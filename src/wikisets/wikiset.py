@@ -286,6 +286,16 @@ class Wikiset(Dataset):
                     ds = ds_any  # type: ignore[assignment]
                 split_used = split_name
 
+                # Always downsample to the requested target_size if smaller than the split size
+                # This ensures the amount returned equals the amount requested for non-exact sizes
+                try:
+                    actual_split_size = len(ds)  # type: ignore[arg-type]
+                except Exception:
+                    actual_split_size = None
+
+                if actual_split_size is not None and target_size < actual_split_size:
+                    ds = reservoir_sample(ds, target_size, seed, actual_split_size)  # type: ignore[arg-type]
+
             # Add lang column
             ds = ds.add_column("lang", [lang] * len(ds))
 
