@@ -38,9 +38,9 @@ def reservoir_sample(
     # This is more memory-efficient than loading all data
     print(f"  Sampling {k:,} from {total_size:,} items...")
     indices = rng.choice(total_size, size=k, replace=False)
-    indices = sorted(indices)  # Sort for cache-friendly access
+    indices.sort()  # Sort in-place for cache-friendly access while preserving ndarray type
 
-    return dataset.select(indices)
+    return dataset.select(indices.tolist())
 
 
 def reservoir_sample_streaming(
